@@ -1,0 +1,1505 @@
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+body {
+    margin: 0;
+    padding: 0;
+    height: 100vh;
+    font-family: Arial, sans-serif;
+    display: flex;
+    flex-direction: column;
+}
+
+.info-container {
+    padding: 20px;
+    min-height: 200px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.element-info {
+    max-width: 600px;
+    padding: 20px;
+    border-radius: 8px;
+    background: #f5f5f5;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    display: none;
+    margin: 20px;
+}
+
+.element-info.active {
+    display: block;
+}
+
+.table-container {
+    width: 100%;
+    background: white;
+    box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
+    padding: 20px;
+    overflow-x: auto;
+}
+
+.periodic-table {
+    display: grid;
+    grid-template-columns: repeat(18, 60px);
+    gap: 2px;
+    min-width: max-content;
+    justify-content: center;
+}
+
+.element {
+    padding: 4px;
+    border: 1px solid #333;
+    text-align: center;
+    font-family: Arial, sans-serif;
+    font-size: 12px;
+    cursor: pointer;
+    transition: transform 0.2s;
+    height: 60px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.element:hover {
+    transform: scale(1.1);
+    z-index: 1;
+}
+
+.spacer {
+    grid-column: span 1;
+}
+
+.lanthanide-spacer {
+    grid-column: span 16;
+}
+
+/* Colors for different element types */
+.alkali-metal { background: #ffebee; }
+.alkaline-earth { background: #f3e5f5; }
+.transition-metal { background: #e3f2fd; }
+.basic-metal { background: #e8f5e9; }
+.semimetal { background: #fff3e0; }
+.nonmetal { background: #fbe9e7; }
+.halogen { background: #e0f7fa; }
+.noble-gas { background: #f3e5f5; }
+.lanthanide { background: #f5f5f5; }
+.actinide { background: #fffde7; }
+
+</style>
+</head>
+<body>
+<div class="info-container">
+    <div class="element-info" id="elementInfo">
+        <h2 id="elementTitle"></h2>
+        <p id="elementDetails"></p>
+    </div>
+</div>
+<div class="table-container">
+    <div class="periodic-table" id="periodicTable">
+    </div>
+</div>
+
+<script>
+// Thông tin chi tiết cho 5 nguyên tố đầu tiên
+const elementData = {
+    H: {
+        name: "Hydrogen (Hydro)",
+        atomicMass: "1.008 u",
+        category: "Phi kim",
+        state: "Khí",
+        description: "Nguyên tố nhẹ nhất và phổ biến nhất trong vũ trụ.",
+        electronConfig: "1s¹",
+        oxidationStates: "+1, -1",
+        discovery: "Henry Cavendish (1766)",
+        uses: "Nhiên liệu sạch, sản xuất amoniac, tinh chế dầu"
+    },
+    He: {
+        name: "Helium (Heli)",
+        atomicMass: "4.003 u",
+        category: "Khí hiếm",
+        state: "Khí",
+        description: "Khí trơ nhẹ thứ hai trong bảng tuần hoàn.",
+        electronConfig: "1s²",
+        oxidationStates: "0",
+        discovery: "Pierre Janssen và Norman Lockyer (1868)",
+        uses: "Bơm khinh khí cầu, làm lạnh nam châm siêu dẫn"
+    },
+    Li: {
+        name: "Lithium (Liti)",
+        atomicMass: "6.941 u",
+        category: "Kim loại kiềm",
+        state: "Rắn",
+        description: "Kim loại kiềm nhẹ nhất và cứng nhất.",
+        electronConfig: "[He]2s¹",
+        oxidationStates: "+1",
+        discovery: "Johann Arfvedson (1817)",
+        uses: "Pin lithium-ion, dược phẩm, hợp kim nhôm"
+    },
+    Be: {
+        name: "Beryllium (Berili)",
+        atomicMass: "9.012 u",
+        category: "Kim loại kiềm thổ",
+        state: "Rắn",
+        description: "Kim loại kiềm thổ nhẹ, cứng, màu xám thép.",
+        electronConfig: "[He]2s²",
+        oxidationStates: "+2",
+        discovery: "Louis-Nicolas Vauquelin (1798)",
+        uses: "Hợp kim đồng beryli, cửa sổ tia X"
+    },
+    B: {
+        name: "Boron (Bo)",
+        atomicMass: "10.811 u",
+        category: "Á kim",
+        state: "Rắn",
+        description: "Á kim có màu đen hoặc nâu đỏ dưới dạng tinh thể.",
+        electronConfig: "[He]2s²2p¹",
+        oxidationStates: "+3",
+        discovery: "Joseph Louis Gay-Lussac (1808)",
+        uses: "Thủy tinh borosilicat, chất tẩy rửa, phân bón"
+    },
+    C: {
+        name: "Carbon (Cacbon)",
+        atomicMass: "12.011 u",
+        category: "Phi kim",
+        state: "Chất rắn (ở điều kiện thường)",
+        description: "Nguyên tố quan trọng bậc nhất trong hóa học hữu cơ và là nền tảng của sự sống trên Trái Đất. Carbon có nhiều dạng thù hình khác nhau như kim cương, graphite, graphene và amorphous carbon.",
+        electronConfig: "1s² 2s² 2p²",
+        oxidationStates: "+4, +2, -4",
+        discovery: "Đã được biết đến từ thời cổ đại",
+        uses: "Nhiên liệu (than đá, dầu mỏ, khí đốt tự nhiên), vật liệu (kim cương, graphite, sợi carbon), hóa học (sản xuất các hợp chất hữu cơ, polymer, dược phẩm, thuốc nhuộm), nông nghiệp (phân bón), công nghiệp (sản xuất thép, điện cực, pin)"
+    },
+    N: {
+        name: "Nitrogen (Nitơ)",
+        atomicMass: "14.007 u",
+        category: "Phi kim",
+        state: "Khí",
+        description: "Nguyên tố phổ biến trong khí quyển Trái Đất (khoảng 78%). Nitơ là thành phần quan trọng của protein và axit nucleic, cần thiết cho sự sống.",
+        electronConfig: "1s² 2s² 2p³",
+        oxidationStates: "+5, +4, +3, +2, +1, -1, -2, -3",
+        discovery: "Daniel Rutherford (1772)",
+        uses: "Sản xuất amoniac (phân bón), axit nitric, thuốc nổ, làm lạnh (nitơ lỏng)"
+    },
+    O: {
+        name: "Oxygen (Oxi)",
+    atomicMass: "15.999 u",
+    category: "Phi kim",
+    state: "Khí",
+    description: "Nguyên tố phổ biến trong khí quyển Trái Đất (khoảng 21%). Oxy là cần thiết cho sự sống của hầu hết các sinh vật.",
+    electronConfig: "1s² 2s² 2p⁴",
+    oxidationStates: "+2, -2",
+    discovery: "Carl Wilhelm Scheele và Joseph Priestley (1774)",
+    uses: "Sản xuất thép, hóa chất, oxy liệu pháp, hàn cắt kim loại"
+    },
+    F: {
+    name: "Fluorine (Flo)",
+    atomicMass: "18.998 u",
+    category: "Phi kim",
+    state: "Khí",
+    description: "Nguyên tố halogen hoạt động mạnh nhất. Flo được sử dụng trong sản xuất kem đánh răng và các hợp chất flo khác.",
+    electronConfig: "1s² 2s² 2p⁵",
+    oxidationStates: "-1",
+    discovery: "Henri Moissan (1886)",
+    uses: "Sản xuất urani hexafluoride, chất làm lạnh, polymer (Teflon)"
+  },
+  Ne: {
+    name: "Neon (Neon)",
+    atomicMass: "20.180 u",
+    category: "Khí hiếm",
+    state: "Khí",
+    description: "Khí hiếm được sử dụng trong đèn neon và ống phóng điện.",
+    electronConfig: "1s² 2s² 2p⁶",
+    oxidationStates: "0",
+    discovery: "William Ramsay và Morris Travers (1898)",
+    uses: "Đèn neon, ống phóng điện, laser"
+  },
+  Na: {
+    name: "Sodium (Natri)",
+    atomicMass: "22.990 u",
+    category: "Kim loại kiềm",
+    state: "Chất rắn",
+    description: "Kim loại kiềm mềm, phản ứng mạnh với nước. Natri là thành phần của muối ăn (NaCl).",
+    electronConfig: "[Ne] 3s¹",
+    oxidationStates: "+1",
+    discovery: "Humphry Davy (1807)",
+    uses: "Sản xuất muối ăn, xà phòng, đèn hơi natri"
+  },
+  Mg: {
+    name: "Magnesium (Magie)",
+    atomicMass: "24.305 u",
+    category: "Kim loại kiềm thổ",
+    state: "Chất rắn",
+    description: "Kim loại kiềm thổ nhẹ, được sử dụng trong hợp kim và sản xuất magie oxit.",
+    electronConfig: "[Ne] 3s²",
+    oxidationStates: "+2",
+    discovery: "Joseph Black (1755)",
+    uses: "Hợp kim nhẹ, sản xuất magie oxit, pháo hoa"
+  },
+  Al: {
+    name: "Aluminium (Nhôm)",
+    atomicMass: "26.982 u",
+    category: "Kim loại",
+    state: "Chất rắn",
+    description: "Kim loại nhẹ, dẫn điện tốt, được sử dụng rộng rãi trong xây dựng, giao thông và đóng gói.",
+    electronConfig: "[Ne] 3s² 3p¹",
+    oxidationStates: "+3",
+    discovery: "Hans Christian Ørsted (1825)",
+    uses: "Xây dựng, giao thông, đóng gói, đồ gia dụng"
+  },
+  Si: {
+    name: "Silicon (Silic)",
+    atomicMass: "28.085 u",
+    category: "Á kim",
+    state: "Chất rắn",
+    description: "Á kim phổ biến trong vỏ Trái Đất (khoảng 28%). Silic là thành phần chính của cát và được sử dụng trong sản xuất chất bán dẫn.",
+    electronConfig: "[Ne] 3s² 3p²",
+    oxidationStates: "+4, -4",
+    discovery: "Jöns Jacob Berzelius (1823)",
+    uses: "Sản xuất chất bán dẫn, vật liệu xây dựng (silicat)"
+  },
+  P: {
+    name: "Phosphorus (Photpho)",
+    atomicMass: "30.974 u",
+    category: "Phi kim",
+    state: "Chất rắn",
+    description: "Phi kim có nhiều dạng thù hình (photpho trắng, đỏ, đen). Photpho là thành phần của DNA và ATP, cần thiết cho sự sống.",
+    electronConfig: "[Ne] 3s² 3p³",
+    oxidationStates: "+5, +3, -3",
+    discovery: "Hennig Brand (1669)",
+    uses: "Sản xuất phân bón, diêm, pháo hoa"
+  },
+  S: {
+    name: "Sulfur (Lưu huỳnh)",
+    atomicMass: "32.066 u",
+    category: "Phi kim",
+    state: "Chất rắn",
+    description: "Phi kim có mùi đặc trưng. Lưu huỳnh được sử dụng trong sản xuất axit sulfuric và nhiều hợp chất khác.",
+    electronConfig: "[Ne] 3s² 3p⁴",
+    oxidationStates: "+6, +4, +2, -2",
+    discovery: "Đã được biết đến từ thời cổ đại",
+    uses: "Sản xuất axit sulfuric, cao su, thuốc trừ sâu"
+  },
+  Cl: {
+    name: "Chlorine (Clo)",
+    atomicMass: "35.453 u",
+    category: "Halogen",
+    state: "Khí",
+    description: "Khí halogen độc, được sử dụng trong khử trùng nước và sản xuất nhiều hợp chất clo hữu cơ.",
+    electronConfig: "[Ne] 3s² 3p⁵",
+    oxidationStates: "+7, +5, +3, +1, -1",
+    discovery: "Carl Wilhelm Scheele (1774)",
+    uses: "Khử trùng nước, sản xuất chất tẩy trắng, hóa chất"
+  },
+  Ar: {
+    name: "Argon (Argon)",
+    atomicMass: "39.948 u",
+    category: "Khí hiếm",
+    state: "Khí",
+    description: "Khí hiếm phổ biến trong khí quyển Trái Đất (khoảng 0.93%). Argon được sử dụng trong đèn huỳnh quang và hàn kim loại.",
+    electronConfig: "[Ne] 3s² 3p⁶",
+    oxidationStates: "0",
+    discovery: "Lord Rayleigh và William Ramsay (1894)",
+    uses: "Đèn huỳnh quang, hàn kim loại, môi trường trơ"
+  },
+  K: {
+    name: "Potassium (Kali)",
+    atomicMass: "39.098 u",
+    category: "Kim loại kiềm",
+    state: "Chất rắn",
+    description: "Kim loại kiềm mềm, phản ứng mạnh với nước. Kali là khoáng chất quan trọng cho cơ thể sống.",
+    electronConfig: "[Ar] 4s¹",
+    oxidationStates: "+1",
+    discovery: "Humphry Davy (1087)",
+    uses: "Phân bón, sản xuất xà phòng, điều hòa nhịp tim"
+  },
+  Ca: {
+    name: "Calcium (Canxi)",
+    atomicMass: "40.078 u",
+    category: "Kim loại kiềm thổ",
+    state: "Chất rắn",
+    description: "Kim loại kiềm thổ cứng, là thành phần chính của xương và răng. Canxi cũng đóng vai trò quan trọng trong co cơ và truyền tín hiệu thần kinh.",
+    electronConfig: "[Ar] 4s²",
+    oxidationStates: "+2",
+    discovery: "Humphry Davy (1808)",
+    uses: "Xây dựng (xi măng), thực phẩm chức năng"
+  },
+  Sc: {
+    name: "Scandium (Scanđi)",
+    atomicMass: "44.956 u",
+    category: "Kim loại chuyển tiếp",
+    state: "Chất rắn",
+    description: "Kim loại chuyển tiếp mềm, nhẹ. Scanđi được sử dụng trong hợp kim và đèn hơi thủy ngân.",
+    electronConfig: "[Ar] 3d¹ 4s²",
+    oxidationStates: "+3",
+    discovery: "Lars Fredrik Nilson (1879)",
+    uses: "Hợp kim, đèn hơi thủy ngân"
+  },
+  Ti: {
+    name: "Titanium (Titan)",
+    atomicMass: "47.867 u",
+    category: "Kim loại chuyển tiếp",
+    state: "Chất rắn",
+    description: "Kim loại chuyển tiếp nhẹ, cứng, chống ăn mòn. Titan được sử dụng trong ngành hàng không vũ trụ, y tế và trang sức.",
+    electronConfig: "[Ar] 3d² 4s²",
+    oxidationStates: "+4, +3, +2",
+    discovery: "William Gregor (1791)",
+    uses: "Ngành hàng không vũ trụ, y tế, trang sức, chất tạo màu"
+  },
+  V: {
+    name: "Vanadium (Vanadi)",
+    atomicMass: "50.942 u",
+    category: "Kim loại chuyển tiếp",
+    state: "Chất rắn",
+    description: "Kim loại chuyển tiếp cứng, được sử dụng trong hợp kim thép để tăng độ bền và chống ăn mòn.",
+    electronConfig: "[Ar] 3d³ 4s²",
+    oxidationStates: "+5, +4, +3, +2",
+    discovery: "Andrés Manuel del Río (1801)",
+    uses: "Hợp kim thép, chất xúc tác"
+  },
+  Cr: {
+    name: "Chromium (Crom)",
+    atomicMass: "51.996 u",
+    category: "Kim loại chuyển tiếp",
+    state: "Chất rắn",
+    description: "Kim loại chuyển tiếp cứng, sáng bóng. Crom được sử dụng để tạo lớp phủ chống ăn mòn (mạ crom) và trong hợp kim thép không gỉ.",
+    electronConfig: "[Ar] 3d⁵ 4s¹",
+    oxidationStates: "+6, +3, +2",
+    discovery: "Louis-Nicolas Vauquelin (1797)",
+    uses: "Mạ crom, thép không gỉ, chất tạo màu"
+  },
+  Mn: {
+    name: "Manganese (Mangan)",
+    atomicMass: "54.938 u",
+    category: "Kim loại chuyển tiếp",
+    state: "Chất rắn",
+    description: "Kim loại chuyển tiếp cứng, giòn. Mangan là thành phần quan trọng của thép và được sử dụng trong sản xuất pin khô.",
+    electronConfig: "[Ar] 3d⁵ 4s²",
+    oxidationStates: "+7, +6, +4, +3, +2",
+    discovery: "Johan Gottlieb Gahn (1774)",
+    uses: "Sản xuất thép, pin khô, hóa chất"
+  },
+  Fe: {
+    name: "Iron (Sắt)",
+    atomicMass: "55.845 u",
+    category: "Kim loại chuyển tiếp",
+    state: "Chất rắn",
+    description: "Kim loại chuyển tiếp phổ biến, là thành phần chính của thép. Sắt là khoáng chất cần thiết cho cơ thể sống.",
+    electronConfig: "[Ar] 3d⁶ 4s²",
+    oxidationStates: "+6, +4, +3, +2, 0, -2",
+    discovery: "Đã được biết đến từ thời cổ đại",
+    uses: "Sản xuất thép, xây dựng, công nghiệp"
+  },
+  Co: {
+    name: "Cobalt (Coban)",
+    atomicMass: "58.933 u",
+    category: "Kim loại chuyển tiếp",
+    state: "Chất rắn",
+    description: "Kim loại chuyển tiếp cứng, được sử dụng trong hợp kim chịu nhiệt, nam châm và chất xúc tác.",
+    electronConfig: "[Ar] 3d⁷ 4s²",
+    oxidationStates: "+5, +4, +3, +2, 0, -1",
+    discovery: "Georg Brandt (1735)",
+    uses: "Hợp kim chịu nhiệt, nam châm, chất xúc tác"
+  },
+  Ni: {
+    name: "Nickel (Niken)",
+    atomicMass: "58.693 u",
+    category: "Kim loại chuyển tiếp",
+    state: "Chất rắn",
+    description: "Kim loại chuyển tiếp cứng, chống ăn mòn. Niken được sử dụng trong mạ niken, thép không gỉ và pin kiềm.",
+    electronConfig: "[Ar] 3d⁸ 4s²",
+    oxidationStates: "+4, +3, +2, 0, -1",
+    discovery: "Axel Fredrik Cronstedt (1751)",
+    uses: "Mạ niken, thép không gỉ, pin kiềm, tiền xu"
+  },
+  Cu: {
+    name: "Copper (Đồng)",
+    atomicMass: "63.546 u",
+    category: "Kim loại chuyển tiếp",
+    state: "Chất rắn",
+    description: "Kim loại chuyển tiếp dẫn điện tốt, được sử dụng trong dây điện, ống nước và đồ gia dụng.",
+    electronConfig: "[Ar] 3d¹⁰ 4s¹",
+    oxidationStates: "+4, +3, +2, +1",
+    discovery: "Đã được biết đến từ thời cổ đại",
+    uses: "Dây điện, ống nước, đồ gia dụng, tiền xu"
+  },
+  Zn: {
+    name: "Zinc (Kẽm)",
+    atomicMass: "65.38 u",
+    category: "Kim loại chuyển tiếp",
+    state: "Chất rắn",
+    description: "Kim loại chuyển tiếp được sử dụng trong mạ kẽm để bảo vệ kim loại khỏi ăn mòn và trong pin kẽm-cacbon.",
+    electronConfig: "[Ar] 3d¹⁰ 4s²",
+    oxidationStates: "+2",
+    discovery: "Đã được biết đến từ thời cổ đại",
+    uses: "Mạ kẽm, pin kẽm-cacbon, hợp kim (đồng thau)"
+  },
+  Ga: {
+    name: "Gallium (Gali)",
+    atomicMass: "69.723 u",
+    category: "Kim loại",
+    state: "Chất rắn",
+    description: "Kim loại mềm, có nhiệt độ nóng chảy thấp. Gali được sử dụng trong sản xuất chất bán dẫn và đèn LED.",
+    electronConfig: "[Ar] 3d¹⁰ 4s² 4p¹",
+    oxidationStates: "+3, +2, +1",
+    discovery: "Lecoq de Boisbaudran (1875)",
+    uses: "Chất bán dẫn, đèn LED, nhiệt kế"
+  },
+  Ge: {
+    name: "Germanium (Gecmani)",
+    atomicMass: "72.630 u",
+    category: "Á kim",
+    state: "Chất rắn",
+    description: "Á kim được sử dụng trong sản xuất chất bán dẫn và sợi quang học.",
+    electronConfig: "[Ar] 3d¹⁰ 4s² 4p²",
+    oxidationStates: "+4, +2",
+    discovery: "Clemens Winkler (1886)",
+    uses: "Chất bán dẫn, sợi quang học, pin mặt trời"
+  },
+  As: {
+    name: "Arsenic (Asen)",
+    atomicMass: "74.922 u",
+    category: "Á kim",
+    state: "Chất rắn",
+    description: "Á kim độc hại. Asen được sử dụng trong sản xuất thuốc trừ sâu và một số hợp chất hóa học khác.",
+    electronConfig: "[Ar] 3d¹⁰ 4s² 4p³",
+    oxidationStates: "+5, +3, -3",
+    discovery: "Đã được biết đến từ thời cổ đại",
+    uses: "Thuốc trừ sâu, dược phẩm (hạn chế)"
+  },
+  Se: {
+    name: "Selenium (Selen)",
+    atomicMass: "78.971 u",
+    category: "Phi kim",
+    state: "Chất rắn",
+    description: "Phi kim có tính quang dẫn, được sử dụng trong máy photocopy và pin mặt trời.",
+    electronConfig: "[Ar] 3d¹⁰ 4s² 4p⁴",
+    oxidationStates: "+6, +4, -2",
+    discovery: "Jöns Jacob Berzelius (1817)",
+    uses: "Máy photocopy, pin mặt trời, sản xuất thủy tinh"
+  },
+  Br: {
+    name: "Bromine (Brom)",
+    atomicMass: "79.904 u",
+    category: "Halogen",
+    state: "Lỏng",
+    description: "Chất lỏng halogen độc, được sử dụng trong sản xuất thuốc nhuộm, thuốc trừ sâu và chất khử trùng.",
+    electronConfig: "[Ar] 3d¹⁰ 4s² 4p⁵",
+    oxidationStates: "+7, +5, +3, +1, -1",
+    discovery: "Antoine-Jérôme Balard (1826)",
+    uses: "Thuốc nhuộm, thuốc trừ sâu, chất khử trùng, hóa chất"
+  },
+  Kr: {
+    name: "Krypton (Krypton)",
+    atomicMass: "83.798 u",
+    category: "Khí hiếm",
+    state: "Khí",
+    description: "Khí hiếm được sử dụng trong đèn huỳnh quang và đèn flash chụp ảnh.",
+    electronConfig: "[Ar] 3d¹⁰ 4s² 4p⁶",
+    oxidationStates: "0, +2",
+    discovery: "William Ramsay và Morris Travers (1898)",
+    uses: "Đèn huỳnh quang, đèn flash chụp ảnh, laser"
+  },
+  Rb: {
+    name: "Rubidium (Rubiđi)",
+    atomicMass: "85.468 u",
+    category: "Kim loại kiềm",
+    state: "Chất rắn",
+    description: "Kim loại kiềm mềm, phản ứng mạnh với nước. Rubidi được sử dụng trong nghiên cứu khoa học và đồng hồ nguyên tử.",
+    electronConfig: "[Kr] 5s¹",
+    oxidationStates: "+1",
+    discovery: "Robert Bunsen và Gustav Kirchhoff (1861)",
+    uses: "Nghiên cứu khoa học, đồng hồ nguyên tử, tế bào quang điện"
+  },
+  Sr: {
+    name: "Strontium (Stronti)",
+    atomicMass: "87.62 u",
+    category: "Kim loại kiềm thổ",
+    state: "Chất rắn",
+    description: "Kim loại kiềm thổ mềm, được sử dụng trong sản xuất pháo hoa và một số hợp chất stronti khác.",
+    electronConfig: "[Kr] 5s²",
+    oxidationStates: "+2",
+    discovery: "Adair Crawford (1790)",
+    uses: "Pháo hoa, sản xuất gốm sứ, y học"
+  },
+  Y: {
+    name: "Yttrium (Ytri)",
+    atomicMass: "88.906 u",
+    category: "Kim loại chuyển tiếp",
+    state: "Chất rắn",
+    description: "Kim loại chuyển tiếp được sử dụng trong sản xuất laser YAG và hợp kim chịu nhiệt.",
+    electronConfig: "[Kr] 4d¹ 5s²",
+    oxidationStates: "+3",
+    discovery: "Johan Gadolin (1794)",
+    uses: "Laser YAG, hợp kim chịu nhiệt, chất siêu dẫn"
+  },
+  Zr: {
+    name: "Zirconium (Zirconi)",
+    atomicMass: "91.224 u",
+    category: "Kim loại chuyển tiếp",
+    state: "Chất rắn",
+    description: "Kim loại chuyển tiếp cứng, chống ăn mòn. Zirconi được sử dụng trong ngành công nghiệp hạt nhân và sản xuất gốm sứ.",
+    electronConfig: "[Kr] 4d² 5s²",
+    oxidationStates: "+4",
+    discovery: "Martin Heinrich Klaproth (1789)",
+    uses: "Ngành công nghiệp hạt nhân, sản xuất gốm sứ, hợp kim chịu nhiệt"
+  },
+  Nb: {
+    name: "Niobium (Niobi)",
+    atomicMass: "92.906 u",
+    category: "Kim loại chuyển tiếp",
+    state: "Chất rắn",
+    description: "Kim loại chuyển tiếp mềm, dẻo. Niobi được sử dụng trong sản xuất thép không gỉ và hợp kim siêu dẫn.",
+    electronConfig: "[Kr] 4d⁴ 5s¹",
+    oxidationStates: "+5, +3",
+    discovery: "Charles Hatchett (1801)",
+    uses: "Thép không gỉ, hợp kim siêu dẫn, ngành công nghiệp điện tử"
+  },
+  Mo: {
+    name: "Molybdenum (Molypden)",
+    atomicMass: "95.94 u",
+    category: "Kim loại chuyển tiếp",
+    state: "Chất rắn",
+    description: "Kim loại chuyển tiếp cứng, được sử dụng trong hợp kim thép để tăng độ bền và chịu nhiệt.",
+    electronConfig: "[Kr] 4d⁵ 5s¹",
+    oxidationStates: "+6, +5, +4, +3, +2",
+    discovery: "Carl Wilhelm Scheele (1778)",
+    uses: "Hợp kim thép, chất xúc tác, ngành công nghiệp dầu khí"
+  },
+  Tc: {
+    name: "Technetium (Tecneti)",
+    atomicMass: "98 u",
+    category: "Kim loại chuyển tiếp",
+    state: "Chất rắn",
+    description: "Kim loại chuyển tiếp phóng xạ. Tecneti được sử dụng trong y học hạt nhân.",
+    electronConfig: "[Kr] 4d⁵ 5s²",
+    oxidationStates: "+7, +6, +5, +4, +3, +2, -1",
+    discovery: "Emilio Segrè và Carlo Perrier (1937)",
+    uses: "Y học hạt nhân"
+  },
+  Ru: {
+    name: "Ruthenium (Ruteni)",
+    atomicMass: "101.07 u",
+    category: "Kim loại chuyển tiếp",
+    state: "Chất rắn",
+    description: "Kim loại chuyển tiếp cứng, hiếm. Ruteni được sử dụng trong sản xuất hợp kim cứng và tiếp điểm điện.",
+    electronConfig: "[Kr] 4d⁷ 5s¹",
+    oxidationStates: "+8, +6, +5, +4, +3, +2, 0, -2",
+    discovery: "Karl Ernst Claus (1844)",
+    uses: "Hợp kim cứng, tiếp điểm điện"
+  },
+  Rh: {
+    name: "Rhodium (Rodi)",
+    atomicMass: "102.906 u",
+    category: "Kim loại chuyển tiếp",
+    state: "Chất rắn",
+    description: "Kim loại chuyển tiếp cứng, hiếm. Rodi được sử dụng trong sản xuất chất xúc tác và lớp phủ phản xạ.",
+    electronConfig: "[Kr] 4d⁸ 5s¹",
+    oxidationStates: "+6, +5, +4, +3, +2, +1, 0, -1",
+    discovery: "William Hyde Wollaston (1803)",
+    uses: "Chất xúc tác, lớp phủ phản xạ"
+  },
+  Pd: {
+    name: "Palladium (Paladi)",
+    atomicMass: "106.42 u",
+    category: "Kim loại chuyển tiếp",
+    state: "Chất rắn",
+    description: "Kim loại chuyển tiếp mềm, dẻo. Paladi được sử dụng trong sản xuất chất xúc tác, thiết bị điện tử và đồ trang sức.",
+    electronConfig: "[Kr] 4d¹⁰",
+    oxidationStates: "+6, +5, +4, +3, +2, +1, 0",
+    discovery: "William Hyde Wollaston (1803)",
+    uses: "Chất xúc tác, thiết bị điện tử, đồ trang sức"
+  },
+  Ag: {
+    name: "Silver (Bạc)",
+    atomicMass: "107.868 u",
+    category: "Kim loại chuyển tiếp",
+    state: "Chất rắn",
+    description: "Kim loại chuyển tiếp mềm, dẻo, dẫn điện tốt. Bạc được sử dụng trong sản xuất đồ trang sức, tiền tệ và thiết bị điện tử.",
+    electronConfig: "[Kr] 4d¹⁰ 5s¹",
+    oxidationStates: "+4, +3, +2, +1",
+    discovery: "Đã được biết đến từ thời cổ đại",
+    uses: "Đồ trang sức, tiền tệ, thiết bị điện tử"
+  },
+  Cd: {
+    name: "Cadmium (Cadmi)",
+    atomicMass: "112.411 u",
+    category: "Kim loại chuyển tiếp",
+    state: "Chất rắn",
+    description: "Kim loại chuyển tiếp mềm, độc hại. Cadmi được sử dụng trong sản xuất pin Ni-Cd và mạ điện.",
+    electronConfig: "[Kr] 4d¹⁰ 5s²",
+    oxidationStates: "+2",
+    discovery: "Friedrich Stromeyer (1817)",
+    uses: "Pin Ni-Cd, mạ điện"
+  },
+  In: {
+    name: "Indium (Indi)",
+    atomicMass: "114.818 u",
+    category: "Kim loại",
+    state: "Chất rắn",
+    description: "Kim loại mềm, dẻo. Indi được sử dụng trong sản xuất màn hình LCD và chất bán dẫn.",
+    electronConfig: "[Kr] 4d¹⁰ 5s² 5p¹",
+    oxidationStates: "+3, +2, +1",
+    discovery: "Ferdinand Reich và Hieronymus Theodor Richter (1863)",
+    uses: "Màn hình LCD, chất bán dẫn"
+  },
+  Sn: {
+    name: "Tin (Thiếc)",
+    atomicMass: "118.710 u",
+    category: "Kim loại",
+    state: "Chất rắn",
+    description: "Kim loại mềm, dễ uốn. Thiếc được sử dụng trong sản xuất đồ hộp, hợp kim hàn và mạ thiếc.",
+    electronConfig: "[Kr] 4d¹⁰ 5s² 5p²",
+    oxidationStates: "+4, +2",
+    discovery: "Đã được biết đến từ thời cổ đại",
+    uses: "Đồ hộp, hợp kim hàn, mạ thiếc"
+  },
+  Sb: {
+    name: "Antimony (Antimon)",
+    atomicMass: "121.760 u",
+    category: "Á kim",
+    state: "Chất rắn",
+    description: "Á kim cứng, giòn. Antimon được sử dụng trong sản xuất hợp kim và thuốc trừ sâu.",
+    electronConfig: "[Kr] 4d¹⁰ 5s² 5p³",
+    oxidationStates: "+5, +3, -3",
+    discovery: "Đã được biết đến từ thời cổ đại",
+    uses: "Hợp kim, thuốc trừ sâu"
+  },
+  Te: {
+    name: "Tellurium (Telua)",
+    atomicMass: "127.60 u",
+    category: "Á kim",
+    state: "Chất rắn",
+    description: "Á kim có tính bán dẫn, được sử dụng trong sản xuất pin mặt trời và hợp kim.",
+    electronConfig: "[Kr] 4d¹⁰ 5s² 5p⁴",
+    oxidationStates: "+6, +4, -2",
+    discovery: "Franz Joseph Müller von Reichenstein (1782)",
+    uses: "Pin mặt trời, hợp kim, sản xuất cao su"
+  },
+  I: {
+    name: "Iodine (Iốt)",
+    atomicMass: "126.904 u",
+    category: "Halogen",
+    state: "Chất rắn",
+    description: "Halogen độc, có tính khử trùng. Iốt được sử dụng trong y học và sản xuất muối iốt.",
+    electronConfig: "[Kr] 4d¹⁰ 5s² 5p⁵",
+    oxidationStates: "+7, +5, +3, +1, -1",
+    discovery: "Bernard Courtois (1811)",
+    uses: "Y học, muối iốt, thuốc nhuộm, hóa chất"
+  },
+  Xe: {
+    name: "Xenon (Xenon)",
+    atomicMass: "131.293 u",
+    category: "Khí hiếm",
+    state: "Khí",
+    description: "Khí hiếm được sử dụng trong đèn xenon, đèn flash chụp ảnh và laser excimer.",
+    electronConfig: "[Kr] 4d¹⁰ 5s² 5p⁶",
+    oxidationStates: "+8, +6, +4, +2, 0",
+    discovery: "William Ramsay và Morris Travers (1898)",
+    uses: "Đèn xenon, đèn flash chụp ảnh, laser excimer"
+  },
+  Cs: {
+    name: "Cesium (Xêsi)",
+    atomicMass: "132.905 u",
+    category: "Kim loại kiềm",
+    state: "Chất rắn",
+    description: "Kim loại kiềm mềm, phản ứng mạnh với nước. Cesium được sử dụng trong đồng hồ nguyên tử và tế bào quang điện.",
+    electronConfig: "[Xe] 6s¹",
+    oxidationStates: "+1",
+    discovery: "Robert Bunsen và Gustav Kirchhoff (1860)",
+    uses: "Đồng hồ nguyên tử, tế bào quang điện, nghiên cứu khoa học"
+  },
+  Ba: {
+    name: "Barium (Bari)",
+    atomicMass: "137.327 u",
+    category: "Kim loại kiềm thổ",
+    state: "Chất rắn",
+    description: "Kim loại kiềm thổ mềm, được sử dụng trong sản xuất pháo hoa và một số hợp chất bari khác.",
+    electronConfig: "[Xe] 6s²",
+    oxidationStates: "+2",
+    discovery: "Carl Wilhelm Scheele (1774)",
+    uses: "Pháo hoa, sản xuất gốm sứ, y học"
+  },
+  La: {
+    name: "Lanthanum (Lantan)",
+    atomicMass: "138.905 u",
+    category: "Kim loại lantan",
+    state: "Chất rắn",
+    description: "Kim loại lantan mềm, được sử dụng trong sản xuất thấu kính quang học và đèn hồ quang.",
+    electronConfig: "[Xe] 5d¹ 6s²",
+    oxidationStates: "+3",
+    discovery: "Carl Gustav Mosander (1839)",
+    uses: "Thấu kính quang học, đèn hồ quang, hợp kim"
+  },
+  Ce: {
+    name: "Cerium (Xeri)",
+    atomicMass: "140.116 u",
+    category: "Kim loại lantan",
+    state: "Chất rắn",
+    description: "Kim loại lantan mềm, được sử dụng trong sản xuất đá lửa và chất xúc tác.",
+    electronConfig: "[Xe] 4f¹ 5d¹ 6s²",
+    oxidationStates: "+4, +3",
+    discovery: "Martin Heinrich Klaproth (1803)",
+    uses: "Đá lửa, chất xúc tác, hợp kim"
+  },
+  Pr: {
+    name: "Praseodymium (Praseođymi)",
+    atomicMass: "140.908 u",
+    category: "Kim loại lantan",
+    state: "Chất rắn",
+    description: "Kim loại lantan mềm, được sử dụng trong sản xuất kính màu và nam châm.",
+    electronConfig: "[Xe] 4f³ 6s²",
+    oxidationStates: "+3",
+    discovery: "Carl Auer von Welsbach (1885)",
+    uses: "Kính màu, nam châm, đèn huỳnh quang"
+  },
+  Nd: {
+    name: "Neodymium (Neođymi)",
+    atomicMass: "144.24 u",
+    category: "Kim loại lantan",
+    state: "Chất rắn",
+    description: "Kim loại lantan mềm, được sử dụng trong sản xuất laser neodymium và nam châm.",
+    electronConfig: "[Xe] 4f⁴ 6s²",
+    oxidationStates: "+3",
+    discovery: "Carl Auer von Welsbach (1885)",
+    uses: "Laser neodymium, nam châm, kính màu"
+  },
+  Pm: {
+    name: "Promethium (Prometi)",
+    atomicMass: "[145] u",
+    category: "Kim loại lantan",
+    state: "Chất rắn",
+    description: "Kim loại lantan phóng xạ. Promethium được sử dụng trong pin hạt nhân và đèn phát quang.",
+    electronConfig: "[Xe] 4f⁵ 6s²",
+    oxidationStates: "+3",
+    discovery: "J. A. Marinsky, L. E. Glendenin, và C. D. Coryell (1945)",
+    uses: "Pin hạt nhân, đèn phát quang"
+  },
+  Sm: {
+    name: "Samarium (Samari)",
+    atomicMass: "150.36 u",
+    category: "Kim loại lantan",
+    state: "Chất rắn",
+    description: "Kim loại lantan mềm, được sử dụng trong sản xuất nam châm và vật liệu hấp thụ neutron.",
+    electronConfig: "[Xe] 4f⁶ 6s²",
+    oxidationStates: "+3, +2",
+    discovery: "Louis-Nicolas Vauquelin (1803)",
+    uses: "Nam châm, vật liệu hấp thụ neutron, y học"
+  },
+  Eu: {
+    name: "Europium (Europi)",
+    atomicMass: "151.964 u",
+    category: "Kim loại lantan",
+    state: "Chất rắn",
+    description: "Kim loại lantan mềm, được sử dụng trong sản xuất laser và đèn huỳnh quang.",
+    electronConfig: "[Xe] 4f⁷ 6s²",
+    oxidationStates: "+3, +2",
+    discovery: "Eugène-Anatole Demarçay (1896)",
+    uses: "Laser, đèn huỳnh quang, vật liệu từ tính"
+  },
+  Gd: {
+    name: "Gadolinium (Gadolini)",
+    atomicMass: "157.25 u",
+    category: "Kim loại lantan",
+    state: "Chất rắn",
+    description: "Kim loại lantan mềm, có tính hấp thụ neutron cao. Gadolini được sử dụng trong ngành công nghiệp hạt nhân và cộng hưởng từ (MRI).",
+    electronConfig: "[Xe] 4f⁷ 5d¹ 6s²",
+    oxidationStates: "+3",
+    discovery: "Jean Charles Galissard de Marignac (1880)",
+    uses: "Ngành công nghiệp hạt nhân, cộng hưởng từ (MRI), vật liệu từ tính"
+  },
+  Tb: {
+    name: "Terbium (Terbi)",
+    atomicMass: "158.925 u",
+    category: "Kim loại lantan",
+    state: "Chất rắn",
+    description: "Kim loại lantan mềm, được sử dụng trong sản xuất laser và đèn huỳnh quang.",
+    electronConfig: "[Xe] 4f⁹ 6s²",
+    oxidationStates: "+3",
+    discovery: "Carl Gustav Mosander (1843)",
+    uses: "Laser, đèn huỳnh quang, vật liệu từ tính"
+  },
+  Dy: {
+    name: "Dysprosium (Disprosi)",
+    atomicMass: "162.50 u",
+    category: "Kim loại lantan",
+    state: "Chất rắn",
+    description: "Kim loại lantan mềm, được sử dụng trong sản xuất laser và đèn huỳnh quang.",
+    electronConfig: "[Xe] 4f¹⁰ 6s²",
+    oxidationStates: "+3",
+    discovery: "Paul-Émile Lecoq de Boisbaudran (1886)",
+    uses: "Laser, đèn huỳnh quang, vật liệu từ tính"
+  },
+  Ho: {
+    name: "Holmium (Holmi)",
+    atomicMass: "164.930 u",
+    category: "Kim loại lantan",
+    state: "Chất rắn",
+    description: "Kim loại lantan mềm, có tính từ tính cao. Holmi được sử dụng trong sản xuất laser và vật liệu từ tính.",
+    electronConfig: "[Xe] 4f¹¹ 6s²",
+    oxidationStates: "+3",
+    discovery: "Per Teodor Cleve (1878)",
+    uses: "Laser, vật liệu từ tính"
+  },
+  Er: {
+    name: "Erbium (Erbi)",
+    atomicMass: "167.259 u",
+    category: "Kim loại lantan",
+    state: "Chất rắn",
+    description: "Kim loại lantan mềm, được sử dụng trong sản xuất laser và sợi quang học.",
+    electronConfig: "[Xe] 4f¹² 6s²",
+    oxidationStates: "+3",
+    discovery: "Carl Gustav Mosander (1842)",
+    uses: "Laser, sợi quang học"
+  },
+  Tm: {
+    name: "Thulium (Thuli)",
+    atomicMass: "168.934 u",
+    category: "Kim loại lantan",
+    state: "Chất rắn",
+    description: "Kim loại lantan mềm, được sử dụng trong laser và máy chụp X-quang di động.",
+    electronConfig: "[Xe] 4f¹³ 6s²",
+    oxidationStates: "+3",
+    discovery: "Per Teodor Cleve (1879)",
+    uses: "Laser, máy chụp X-quang di động"
+  },
+  Yb: {
+    name: "Ytterbium (Ytebi)",
+    atomicMass: "173.054 u",
+    category: "Kim loại lantan",
+    state: "Chất rắn",
+    description: "Kim loại lantan mềm, được sử dụng trong laser và vật liệu từ tính.",
+    electronConfig: "[Xe] 4f¹⁴ 6s²",
+    oxidationStates: "+3, +2",
+    discovery: "Jean Charles Galissard de Marignac (1878)",
+    uses: "Laser, vật liệu từ tính"
+  },
+  Lu: {
+    name: "Lutetium (Luteti)",
+    atomicMass: "174.967 u",
+    category: "Kim loại lantan",
+    state: "Chất rắn",
+    description: "Kim loại lantan mềm, được sử dụng trong một số ứng dụng đặc biệt.",
+    electronConfig: "[Xe] 4f¹⁴ 5d¹ 6s²",
+    oxidationStates: "+3",
+    discovery: "Georges Urbain (1907)",
+    uses: "Ứng dụng đặc biệt"
+  },
+  Hf: {
+    name: "Hafnium (Hafni)",
+    atomicMass: "178.49 u",
+    category: "Kim loại chuyển tiếp",
+    state: "Chất rắn",
+    description: "Kim loại chuyển tiếp cứng, có tính chống ăn mòn cao. Hafni được sử dụng trong ngành công nghiệp hạt nhân và sản xuất hợp kim chịu nhiệt.",
+    electronConfig: "[Xe] 4f¹⁴ 5d² 6s²",
+    oxidationStates: "+4",
+    discovery: "Dirk Coster và George de Hevesy (1923)",
+    uses: "Ngành công nghiệp hạt nhân, hợp kim chịu nhiệt"
+  },
+  Hf: {
+    name: "Hafnium (Hafni)",
+    atomicMass: "178.49 u",
+    category: "Kim loại chuyển tiếp",
+    state: "Chất rắn",
+    description: "Kim loại chuyển tiếp cứng, có tính chống ăn mòn cao. Hafni được sử dụng trong ngành công nghiệp hạt nhân và sản xuất hợp kim chịu nhiệt.",
+    electronConfig: "[Xe] 4f¹⁴ 5d² 6s²",
+    oxidationStates: "+4",
+    discovery: "Dirk Coster và George de Hevesy (1923)",
+    uses: "Ngành công nghiệp hạt nhân, hợp kim chịu nhiệt"
+  },
+  Ta: {
+    name: "Tantalum (Tantan)",
+    atomicMass: "180.948 u",
+    category: "Kim loại chuyển tiếp",
+    state: "Chất rắn",
+    description: "Kim loại chuyển tiếp cứng, có nhiệt độ nóng chảy cao. Tantan được sử dụng trong sản xuất tụ điện và hợp kim chịu nhiệt.",
+    electronConfig: "[Xe] 4f¹⁴ 5d³ 6s²",
+    oxidationStates: "+5",
+    discovery: "Anders Gustaf Ekeberg (1802)",
+    uses: "Tụ điện, hợp kim chịu nhiệt, thiết bị y tế"
+  },
+  W: {
+    name: "Tungsten (Vonfram)",
+    atomicMass: "183.84 u",
+    category: "Kim loại chuyển tiếp",
+    state: "Chất rắn",
+    description: "Kim loại chuyển tiếp cứng, có nhiệt độ nóng chảy cao nhất trong các kim loại. Vonfram được sử dụng trong sản xuất dây tóc bóng đèn và dụng cụ cắt gọt.",
+    electronConfig: "[Xe] 4f¹⁴ 5d⁴ 6s²",
+    oxidationStates: "+6, +5, +4, +3, +2",
+    discovery: "Carl Wilhelm Scheele (1781)",
+    uses: "Dây tóc bóng đèn, dụng cụ cắt gọt, hợp kim chịu nhiệt"
+  },
+  Re: {
+    name: "Rhenium (Reni)",
+    atomicMass: "186.207 u",
+    category: "Kim loại chuyển tiếp",
+    state: "Chất rắn",
+    description: "Kim loại chuyển tiếp hiếm, có nhiệt độ nóng chảy cao. Reni được sử dụng trong hợp kim chịu nhiệt và chất xúc tác.",
+    electronConfig: "[Xe] 4f¹⁴ 5d⁵ 6s²",
+    oxidationStates: "+7, +6, +5, +4, +3, +2, -1",
+    discovery: "Walter Noddack, Ida Tacke, và Otto Berg (1925)",
+    uses: "Hợp kim chịu nhiệt, chất xúc tác"
+  },
+  Os: {
+    name: "Osmium (Osmi)",
+    atomicMass: "190.23 u",
+    category: "Kim loại chuyển tiếp",
+    state: "Chất rắn",
+    description: "Kim loại chuyển tiếp cứng, có mật độ cao. Osmi được sử dụng trong sản xuất hợp kim cứng và ngòi bút máy.",
+    electronConfig: "[Xe] 4f¹⁴ 5d⁶ 6s²",
+    oxidationStates: "+8, +6, +5, +4, +3, +2, 0, -1, -2",
+    discovery: "Smithson Tennant (1804)",
+    uses: "Hợp kim cứng, ngòi bút máy, thiết bị điện tử"
+  },
+  Ir: {
+    name: "Iridium (Iridi)",
+    atomicMass: "192.217 u",
+    category: "Kim loại chuyển tiếp",
+    state: "Chất rắn",
+    description: "Kim loại chuyển tiếp cứng, có tính chống ăn mòn cao. Iridi được sử dụng trong sản xuất bugi đánh lửa và hợp kim bạch kim-iridi.",
+    electronConfig: "[Xe] 4f¹⁴ 5d⁷ 6s²",
+    oxidationStates: "+6, +5, +4, +3, +2, 0, -1",
+    discovery: "Smithson Tennant (1804)",
+    uses: "Bugi đánh lửa, hợp kim bạch kim-iridi, điện cực"
+  },
+  Pt: {
+    name: "Platinum (Bạch kim)",
+    atomicMass: "195.084 u",
+    category: "Kim loại chuyển tiếp",
+    state: "Chất rắn",
+    description: "Kim loại chuyển tiếp quý hiếm, có tính chống ăn mòn cao. Bạch kim được sử dụng trong sản xuất đồ trang sức, chất xúc tác và thiết bị y tế.",
+    electronConfig: "[Xe] 4f¹⁴ 5d⁹ 6s¹",
+    oxidationStates: "+6, +5, +4, +3, +2, +1, -1, -2",
+    discovery: "Julius Scaliger (1557)",
+    uses: "Đồ trang sức, chất xúc tác, thiết bị y tế"
+  },
+  Au: {
+    name: "Gold (Vàng)",
+    atomicMass: "196.967 u",
+    category: "Kim loại chuyển tiếp",
+    state: "Chất rắn",
+    description: "Kim loại chuyển tiếp quý hiếm, mềm, dẻo. Vàng được sử dụng trong sản xuất đồ trang sức, tiền tệ và thiết bị điện tử.",
+    electronConfig: "[Xe] 4f¹⁴ 5d¹⁰ 6s¹",
+    oxidationStates: "+3, +2, +1, -1",
+    discovery: "Đã được biết đến từ thời cổ đại",
+    uses: "Đồ trang sức, tiền tệ, thiết bị điện tử"
+  },
+  Hg: {
+    name: "Mercury (Thủy ngân)",
+    atomicMass: "200.59 u",
+    category: "Kim loại chuyển tiếp",
+    state: "Lỏng",
+    description: "Kim loại chuyển tiếp duy nhất ở trạng thái lỏng ở nhiệt độ phòng. Thủy ngân được sử dụng trong nhiệt kế, áp kế và đèn huỳnh quang.",
+    electronConfig: "[Xe] 4f¹⁴ 5d¹⁰ 6s²",
+    oxidationStates: "+2, +1",
+    discovery: "Đã được biết đến từ thời cổ đại",
+    uses: "Nhiệt kế, áp kế, đèn huỳnh quang, амальгам"
+  },
+  Tl: {
+    name: "Thallium (Tali)",
+    atomicMass: "204.383 u",
+    category: "Kim loại",
+    state: "Chất rắn",
+    description: "Kim loại mềm, độc hại. Tali được sử dụng trong một số ứng dụng đặc biệt.",
+    electronConfig: "[Xe] 4f¹⁴ 5d¹⁰ 6s² 6p¹",
+    oxidationStates: "+3, +1",
+    discovery: "William Crookes (1861)",
+    uses: "Ứng dụng đặc biệt"
+  },
+  Tl: {
+    name: "Thallium (Tali)",
+    atomicMass: "204.383 u",
+    category: "Kim loại",
+    state: "Chất rắn",
+    description: "Kim loại mềm, độc hại. Tali được sử dụng trong một số ứng dụng đặc biệt.",
+    electronConfig: "[Xe] 4f¹⁴ 5d¹⁰ 6s² 6p¹",
+    oxidationStates: "+3, +1",
+    discovery: "William Crookes (1861)",
+    uses: "Ứng dụng đặc biệt"
+  },
+  Pb: {
+    name: "Lead (Chì)",
+    atomicMass: "207.2 u",
+    category: "Kim loại",
+    state: "Chất rắn",
+    description: "Kim loại mềm, nặng, độc hại. Chì được sử dụng trong sản xuất ắc quy, vật liệu chống phóng xạ và một số hợp kim.",
+    electronConfig: "[Xe] 4f¹⁴ 5d¹⁰ 6s² 6p²",
+    oxidationStates: "+4, +2",
+    discovery: "Đã được biết đến từ thời cổ đại",
+    uses: "Ắc quy, vật liệu chống phóng xạ, hợp kim"
+  },
+  Bi: {
+    name: "Bismuth (Bismut)",
+    atomicMass: "208.980 u",
+    category: "Kim loại",
+    state: "Chất rắn",
+    description: "Kim loại nặng, có nhiệt độ nóng chảy thấp. Bismut được sử dụng trong sản xuất hợp kim dễ chảy và thuốc giảm đau dạ dày.",
+    electronConfig: "[Xe] 4f¹⁴ 5d¹⁰ 6s² 6p³",
+    oxidationStates: "+5, +3",
+    discovery: "Claude François Geoffroy (1753)",
+    uses: "Hợp kim dễ chảy, thuốc giảm đau dạ dày, chất màu"
+  },
+  Po: {
+    name: "Polonium (Poloni)",
+    atomicMass: "[209] u",
+    category: "Kim loại",
+    state: "Chất rắn",
+    description: "Kim loại phóng xạ. Poloni được sử dụng trong một số ứng dụng đặc biệt.",
+    electronConfig: "[Xe] 4f¹⁴ 5d¹⁰ 6s² 6p⁴",
+    oxidationStates: "+6, +4, +2",
+    discovery: "Marie Curie và Pierre Curie (1898)",
+    uses: "Nguồn nhiệt, ứng dụng đặc biệt"
+  },
+  At: {
+    name: "Astatine (Astatin)",
+    atomicMass: "[210] u",
+    category: "Halogen",
+    state: "Chất rắn",
+    description: "Halogen phóng xạ, rất hiếm. Astatine được nghiên cứu trong một số ứng dụng y học.",
+    electronConfig: "[Xe] 4f¹⁴ 5d¹⁰ 6s² 6p⁵",
+    oxidationStates: "+7, +5, +3, +1, -1",
+    discovery: "Dale R. Corson, K. R. MacKenzie, và Emilio Segrè (1940)",
+    uses: "Nghiên cứu y học"
+  },
+  Rn: {
+    name: "Radon (Rađon)",
+    atomicMass: "[222] u",
+    category: "Khí hiếm",
+    state: "Khí",
+    description: "Khí hiếm phóng xạ. Radon có thể gây ung thư phổi.",
+    electronConfig: "[Xe] 4f¹⁴ 5d¹⁰ 6s² 6p⁶",
+    oxidationStates: "+2, 0",
+    discovery: "Friedrich Ernst Dorn (1900)",
+    uses: "Nghiên cứu khoa học (rất hạn chế)"
+  },
+  Fr: {
+    name: "Francium (Franci)",
+    atomicMass: "[223] u",
+    category: "Kim loại kiềm",
+    state: "Chất rắn",
+    description: "Kim loại kiềm phóng xạ, rất hiếm. Franci được nghiên cứu trong một số ứng dụng khoa học.",
+    electronConfig: "[Rn] 7s¹",
+    oxidationStates: "+1",
+    discovery: "Marguerite Perey (1939)",
+    uses: "Nghiên cứu khoa học"
+  },
+  Ra: {
+    name: "Radium (Radi)",
+    atomicMass: "[226] u",
+    category: "Kim loại kiềm thổ",
+    state: "Chất rắn",
+    description: "Kim loại kiềm thổ phóng xạ. Radi được sử dụng trong xạ trị ung thư.",
+    electronConfig: "[Rn] 7s²",
+    oxidationStates: "+2",
+    discovery: "Marie Curie và Pierre Curie (1898)",
+    uses: "Xạ trị ung thư"
+  },
+  Ac: {
+    name: "Actinium (Actini)",
+    atomicMass: "[227] u",
+    category: "Kim loại actini",
+    state: "Chất rắn",
+    description: "Kim loại actini phóng xạ. Actini được nghiên cứu trong một số ứng dụng khoa học.",
+    electronConfig: "[Rn] 6d¹ 7s²",
+    oxidationStates: "+3",
+    discovery: "André-Louis Debierne (1899)",
+    uses: "Nghiên cứu khoa học"
+  },
+  Th: {
+    name: "Thorium (Thori)",
+    atomicMass: "232.038 u",
+    category: "Kim loại actini",
+    state: "Chất rắn",
+    description: "Kim loại actini phóng xạ. Thori được sử dụng trong sản xuất nhiên liệu hạt nhân (thori).",
+    electronConfig: "[Rn] 6d² 7s²",
+    oxidationStates: "+4",
+    discovery: "Jöns Jacob Berzelius (1828)",
+    uses: "Nhiên liệu hạt nhân (thori)"
+  },
+  Pa: {
+    name: "Protactinium (Protactini)",
+    atomicMass: "231.036 u",
+    category: "Kim loại actini",
+    state: "Chất rắn",
+    description: "Kim loại actini phóng xạ. Protactini được nghiên cứu trong một số ứng dụng khoa học.",
+    electronConfig: "[Rn] 5f² 6d¹ 7s²",
+    oxidationStates: "+5, +4",
+    discovery: "Otto Hahn và Lise Meitner (1917)",
+    uses: "Nghiên cứu khoa học"
+  },
+  U: {
+    name: "Uranium (Urani)",
+    atomicMass: "238.029 u",
+    category: "Kim loại actini",
+    state: "Chất rắn",
+    description: "Kim loại actini phóng xạ. Urani được sử dụng trong sản xuất nhiên liệu hạt nhân (urani) và vũ khí hạt nhân.",
+    electronConfig: "[Rn] 5f³ 6d¹ 7s²",
+    oxidationStates: "+6, +5, +4, +3",
+    discovery: "Martin Heinrich Klaproth (1789)",
+    uses: "Nhiên liệu hạt nhân (urani), vũ khí hạt nhân"
+  },
+  Np: {
+    name: "Neptunium (Neptuni)",
+    atomicMass: "[237] u",
+    category: "Kim loại actini",
+    state: "Chất rắn",
+    description: "Kim loại actini phóng xạ. Neptuni được tạo ra trong các lò phản ứng hạt nhân.",
+    electronConfig: "[Rn] 5f⁴ 6d¹ 7s²",
+    oxidationStates: "+7, +6, +5, +4, +3",
+    discovery: "Edwin McMillan và Philip Abelson (1940)",
+    uses: "Nghiên cứu khoa học"
+  },
+  Pu: {
+    name: "Plutonium (Plutoni)",
+    atomicMass: "[244] u",
+    category: "Kim loại actini",
+    state: "Chất rắn",
+    description: "Kim loại actini phóng xạ. Plutoni được sử dụng trong sản xuất vũ khí hạt nhân và nhiên liệu hạt nhân (plutoni).",
+    electronConfig: "[Rn] 5f⁶ 7s²",
+    oxidationStates: "+7, +6, +5, +4, +3",
+    discovery: "Glenn T. Seaborg, Arthur C. Wahl, và Joseph W. Kennedy (1941)",
+    uses: "Vũ khí hạt nhân, nhiên liệu hạt nhân (plutoni)"
+  },
+  Am: {
+    name: "Americium (Americi)",
+    atomicMass: "[243] u",
+    category: "Kim loại actini",
+    state: "Chất rắn",
+    description: "Kim loại actini phóng xạ. Americi được sử dụng trong máy dò khói và một số ứng dụng đặc biệt.",
+    electronConfig: "[Rn] 5f⁷ 7s²",
+    oxidationStates: "+6, +5, +4, +3, +2",
+    discovery: "Glenn T. Seaborg, Ralph A. James, Leon O. Morgan, và Albert Ghiorso (1945)",
+    uses: "Máy dò khói, ứng dụng đặc biệt"
+  },
+  Cm: {
+    name: "Curium (Curi)",
+    atomicMass: "[247] u",
+    category: "Kim loại actini",
+    state: "Chất rắn",
+    description: "Kim loại actini phóng xạ. Curi được nghiên cứu trong một số ứng dụng khoa học.",
+    electronConfig: "[Rn] 5f⁷ 6d¹ 7s²",
+    oxidationStates: "+6, +5, +4, +3",
+    discovery: "Glenn T. Seaborg, Ralph A. James, và Albert Ghiorso (1944)",
+    uses: "Nghiên cứu khoa học"
+  },
+  Bk: {
+    name: "Berkelium (Berkeli)",
+    atomicMass: "[247] u",
+    category: "Kim loại actini",
+    state: "Chất rắn",
+    description: "Kim loại actini phóng xạ. Berkeli được nghiên cứu trong một số ứng dụng khoa học.",
+    electronConfig: "[Rn] 5f⁹ 7s²",
+    oxidationStates: "+4, +3",
+    discovery: "Glenn T. Seaborg, Stanley G. Thompson, Albert Ghiorso, và Kenneth Street, Jr. (1949)",
+    uses: "Nghiên cứu khoa học"
+  },
+  Cf: {
+    name: "Californium (Californi)",
+    atomicMass: "[251] u",
+    category: "Kim loại actini",
+    state: "Chất rắn",
+    description: "Kim loại actini phóng xạ. Californi được sử dụng trong sản xuất các nguyên tố siêu urani và một số ứng dụng đặc biệt.",
+    electronConfig: "[Rn] 5f¹⁰ 7s²",
+    oxidationStates: "+4, +3, +2",
+    discovery: "Glenn T. Seaborg, Ralph A. James, và Albert Ghiorso (1949)",
+    uses: "Sản xuất các nguyên tố siêu urani, ứng dụng đặc biệt"
+  },
+  Es: {
+    name: "Einsteinium (Einsteinium)",
+    atomicMass: "[252] u",
+    category: "Kim loại actini",
+    state: "Chất rắn",
+    description: "Kim loại actini phóng xạ. Einsteinium được nghiên cứu trong một số ứng dụng khoa học.",
+    electronConfig: "[Rn] 5f¹¹ 7s²",
+    oxidationStates: "+3, +2",
+    discovery: "Albert Ghiorso, Glenn T. Seaborg, Ralph A. James, và Leon O. Morgan (1952)",
+    uses: "Nghiên cứu khoa học"
+  },
+  Fm: {
+    name: "Fermium (Fermium)",
+    atomicMass: "[257] u",
+    category: "Kim loại actini",
+    state: "Chất rắn",
+    description: "Kim loại actini phóng xạ. Fermium được nghiên cứu trong một số ứng dụng khoa học.",
+    electronConfig: "[Rn] 5f¹² 7s²",
+    oxidationStates: "+3, +2",
+    discovery: "Albert Ghiorso, Glenn T. Seaborg, Stanley G. Thompson, và Albert Ghiorso (1952)",
+    uses: "Nghiên cứu khoa học"
+  },
+  Md: {
+    name: "Mendelevium (Mendelevium)",
+    atomicMass: "[258] u",
+    category: "Kim loại actini",
+    state: "Chất rắn",
+    description: "Kim loại actini phóng xạ. Mendelevium được nghiên cứu trong một số ứng dụng khoa học.",
+    electronConfig: "[Rn] 5f¹³ 7s²",
+    oxidationStates: "+3, +2",
+    discovery: "Albert Ghiorso, Bernard G. Harvey, Gregory R. Choppin, và Glenn T. Seaborg (1955)",
+    uses: "Nghiên cứu khoa học"
+  },
+  No: {
+    name: "Nobelium (Nobelium)",
+    atomicMass: "[259] u",
+    category: "Kim loại actini",
+    state: "Chất rắn",
+    description: "Kim loại actini phóng xạ. Nobelium được nghiên cứu trong một số ứng dụng khoa học.",
+    electronConfig: "[Rn] 5f¹⁴ 7s²",
+    oxidationStates: "+3, +2",
+    discovery: "Albert Ghiorso, Torbjørn Sikkeland, John R. Walton, và Glenn T. Seaborg (1958)",
+    uses: "Nghiên cứu khoa học"
+  },
+  Lr: {
+    name: "Lawrencium (Lawrencium)",
+    atomicMass: "[262] u",
+    category: "Kim loại actini",
+    state: "Chất rắn",
+    description: "Kim loại actini phóng xạ. Lawrencium được nghiên cứu trong một số ứng dụng khoa học.",
+    electronConfig: "[Rn] 5f¹⁴ 6d¹ 7s²",
+    oxidationStates: "+3",
+    discovery: "Albert Ghiorso, Torbjørn Sikkeland, A. E. Larsh, và R. M. Latimer (1961)",
+    uses: "Nghiên cứu khoa học"
+  },
+  Rf: {
+    name: "Rutherfordium (Rutherfordium)",
+    atomicMass: "[267] u",
+    category: "Kim loại chuyển tiếp",
+    state: "Chất rắn",
+    description: "Kim loại chuyển tiếp phóng xạ. Rutherfordium được nghiên cứu trong một số ứng dụng khoa học.",
+    electronConfig: "[Rn] 5f¹⁴ 6d² 7s²",
+    oxidationStates: "+4",
+    discovery: "Joint Institute for Nuclear Research (1964) và Lawrence Berkeley National Laboratory (1969)",
+    uses: "Nghiên cứu khoa học"
+  },
+  Db: {
+    name: "Dubnium (Dubnium)",
+    atomicMass: "[268] u",
+    category: "Kim loại chuyển tiếp",
+    state: "Chất rắn",
+    description: "Kim loại chuyển tiếp phóng xạ. Dubnium được nghiên cứu trong một số ứng dụng khoa học.",
+    electronConfig: "[Rn] 5f¹⁴ 6d³ 7s²",
+    oxidationStates: "+5, +4, +3",
+    discovery: "Joint Institute for Nuclear Research (1968)",
+    uses: "Nghiên cứu khoa học"
+  },
+  Sg: {
+    name: "Seaborgium (Seaborgium)",
+    atomicMass: "[269] u",
+    category: "Kim loại chuyển tiếp",
+    state: "Chất rắn",
+    description: "Kim loại chuyển tiếp phóng xạ. Seaborgium được nghiên cứu trong một số ứng dụng khoa học.",
+    electronConfig: "[Rn] 5f¹⁴ 6d⁴ 7s²",
+    oxidationStates: "+6",
+    discovery: "Lawrence Berkeley National Laboratory (1974)",
+    uses: "Nghiên cứu khoa học"
+  },
+  Bh: {
+    name: "Bohrium (Bohrium)",
+    atomicMass: "[270] u",
+    category: "Kim loại chuyển tiếp",
+    state: "Chất rắn",
+    description: "Kim loại chuyển tiếp phóng xạ. Bohrium được nghiên cứu trong một số ứng dụng khoa học.",
+    electronConfig: "[Rn] 5f¹⁴ 6d⁵ 7s²",
+    oxidationStates: "+7, +5, +4, +3",
+    discovery: "Joint Institute for Nuclear Research (1976)",
+    uses: "Nghiên cứu khoa học"
+  },
+  Hs: {
+    name: "Hassium (Hassium)",
+    atomicMass: "[277] u",
+    category: "Kim loại chuyển tiếp",
+    state: "Chất rắn",
+    description: "Kim loại chuyển tiếp phóng xạ. Hassium được nghiên cứu trong một số ứng dụng khoa học.",
+    electronConfig: "[Rn] 5f¹⁴ 6d⁶ 7s²",
+    oxidationStates: "+8, +6, +5, +4, +3, +2",
+    discovery: "Gesellschaft für Schwerionenforschung (1984)",
+    uses: "Nghiên cứu khoa học"
+  },
+  Hs: {
+    name: "Hassium (Hassium)",
+    atomicMass: "[277] u",
+    category: "Kim loại chuyển tiếp",
+    state: "Chất rắn",
+    description: "Kim loại chuyển tiếp phóng xạ. Hassium được nghiên cứu trong một số ứng dụng khoa học.",
+    electronConfig: "[Rn] 5f¹⁴ 6d⁶ 7s²",
+    oxidationStates: "+8, +6, +5, +4, +3, +2",
+    discovery: "Gesellschaft für Schwerionenforschung (1984)",
+    uses: "Nghiên cứu khoa học"
+  },
+  Mt: {
+    name: "Meitnerium (Meitnerium)",
+    atomicMass: "[278] u",
+    category: "Kim loại chuyển tiếp",
+    state: "Chất rắn",
+    description: "Kim loại chuyển tiếp phóng xạ. Meitnerium được nghiên cứu trong một số ứng dụng khoa học.",
+    electronConfig: "[Rn] 5f¹⁴ 6d⁷ 7s²",
+    oxidationStates: "+9, +8, +6, +4, +3, +1",
+    discovery: "Gesellschaft für Schwerionenforschung (1982)",
+    uses: "Nghiên cứu khoa học"
+  },
+  Ds: {
+    name: "Darmstadtium (Darmstadtium)",
+    atomicMass: "[281] u",
+    category: "Kim loại chuyển tiếp",
+    state: "Chất rắn",
+    description: "Kim loại chuyển tiếp phóng xạ. Darmstadtium được nghiên cứu trong một số ứng dụng khoa học.",
+    electronConfig: "[Rn] 5f¹⁴ 6d⁸ 7s²",
+    oxidationStates: "+6, +4, +3, +2",
+    discovery: "Gesellschaft für Schwerionenforschung (1994)",
+    uses: "Nghiên cứu khoa học"
+  },
+  Rg: {
+    name: "Roentgenium (Roentgenium)",
+    atomicMass: "[282] u",
+    category: "Kim loại chuyển tiếp",
+    state: "Chất rắn",
+    description: "Kim loại chuyển tiếp phóng xạ. Roentgenium được nghiên cứu trong một số ứng dụng khoa học.",
+    electronConfig: "[Rn] 5f¹⁴ 6d⁹ 7s²",
+    oxidationStates: "+5, +3, +1",
+    discovery: "Gesellschaft für Schwerionenforschung (1994)",
+    uses: "Nghiên cứu khoa học"
+  },
+  Cn: {
+    name: "Copernicium (Copernicium)",
+    atomicMass: "[285] u",
+    category: "Kim loại chuyển tiếp",
+    state: "Chất rắn",
+    description: "Kim loại chuyển tiếp phóng xạ. Copernicium được nghiên cứu trong một số ứng dụng khoa học.",
+    electronConfig: "[Rn] 5f¹⁴ 6d¹⁰ 7s²",
+    oxidationStates: "+2",
+    discovery: "Gesellschaft für Schwerionenforschung (1996)",
+    uses: "Nghiên cứu khoa học"
+  },
+  Nh: {
+    name: "Nihonium (Nihonium)",
+    atomicMass: "[286] u",
+    category: "Kim loại",
+    state: "Chất rắn",
+    description: "Kim loại phóng xạ. Nihonium được nghiên cứu trong một số ứng dụng khoa học.",
+    electronConfig: "[Rn] 5f¹⁴ 6d¹⁰ 7s² 7p¹",
+    oxidationStates: "+3, +1",
+    discovery: "RIKEN (2003)",
+    uses: "Nghiên cứu khoa học"
+  },
+  Fl: {
+    name: "Flerovium (Flerovium)",
+    atomicMass: "[289] u",
+    category: "Kim loại",
+    state: "Chất rắn",
+    description: "Kim loại phóng xạ. Flerovium được nghiên cứu trong một số ứng dụng khoa học.",
+    electronConfig: "[Rn] 5f¹⁴ 6d¹⁰ 7s² 7p²",
+    oxidationStates: "+4, +2",
+    discovery: "Joint Institute for Nuclear Research (1998)",
+    uses: "Nghiên cứu khoa học"
+  },
+  Mc: {
+    name: "Moscovium (Moscovium)",
+    atomicMass: "[290] u",
+    category: "Kim loại",
+    state: "Chất rắn",
+    description: "Kim loại phóng xạ. Moscovium được nghiên cứu trong một số ứng dụng khoa học.",
+    electronConfig: "[Rn] 5f¹⁴ 6d¹⁰ 7s² 7p³",
+    oxidationStates: "+5, +3, +1",
+    discovery: "Joint Institute for Nuclear Research và Lawrence Livermore National Laboratory (2003)",
+    uses: "Nghiên cứu khoa học"
+  },
+  Lv: {
+    name: "Livermorium (Livermorium)",
+    atomicMass: "[293] u",
+    category: "Kim loại",
+    state: "Chất rắn",
+    description: "Kim loại phóng xạ. Livermorium được nghiên cứu trong một số ứng dụng khoa học.",
+    electronConfig: "[Rn] 5f¹⁴ 6d¹⁰ 7s² 7p⁴",
+    oxidationStates: "+4, +2",
+    discovery: "Joint Institute for Nuclear Research và Lawrence Livermore National Laboratory (2000)",
+    uses: "Nghiên cứu khoa học"
+  },
+  Ts: {
+    name: "Tennessine (Tennessine)",
+    atomicMass: "[294] u",
+    category: "Halogen",
+    state: "Chất rắn",
+    description: "Halogen phóng xạ. Tennessine được nghiên cứu trong một số ứng dụng khoa học.",
+    electronConfig: "[Rn] 5f¹⁴ 6d¹⁰ 7s² 7p⁵",
+    oxidationStates: "+5, +3, +1, -1",
+    discovery: "Joint Institute for Nuclear Research, Lawrence Livermore National Laboratory, Oak Ridge National Laboratory, Vanderbilt University (2010)",
+    uses: "Nghiên cứu khoa học"
+  },
+  Og: {
+    name: "Oganesson (Oganesson)",
+    atomicMass: "[294] u",
+    category: "Khí hiếm",
+    state: "Chất rắn",
+    description: "Khí hiếm phóng xạ. Oganesson được nghiên cứu trong một số ứng dụng khoa học.",
+    electronConfig: "[Rn] 5f¹⁴ 6d¹⁰ 7s² 7p⁶",
+    oxidationStates: "+6, +4, +2, 0",
+    discovery: "Joint Institute for Nuclear Research và Lawrence Livermore National Laboratory (2002)",
+    uses: "Nghiên cứu khoa học"
+  }
+};
+
+// Định nghĩa cấu trúc bảng tuần hoàn
+const periodicTable = [
+    // Format: [atomic number, symbol, element class]
+    [1, "H", "nonmetal"], [null, null, "spacer", 16], [2, "He", "noble-gas"],
+    [3, "Li", "alkali-metal"], [4, "Be", "alkaline-earth"], [null, null, "spacer", 10], [5, "B", "nonmetal"], [6, "C", "nonmetal"], [7, "N", "nonmetal"], [8, "O", "nonmetal"], [9, "F", "halogen"], [10, "Ne", "noble-gas"],
+    [11, "Na", "alkali-metal"], [12, "Mg", "alkaline-earth"], [null, null, "spacer", 10], [13, "Al", "basic-metal"], [14, "Si", "semimetal"], [15, "P", "nonmetal"], [16, "S", "nonmetal"], [17, "Cl", "halogen"], [18, "Ar", "noble-gas"],
+    [19, "K", "alkali-metal"], [20, "Ca", "alkaline-earth"], [21, "Sc", "transition-metal"], [22, "Ti", "transition-metal"], [23, "V", "transition-metal"], [24, "Cr", "transition-metal"], [25, "Mn", "transition-metal"], [26, "Fe", "transition-metal"], [27, "Co", "transition-metal"], [28, "Ni", "transition-metal"], [29, "Cu", "transition-metal"], [30, "Zn", "transition-metal"], [31, "Ga", "basic-metal"], [32, "Ge", "semimetal"], [33, "As", "semimetal"], [34, "Se", "nonmetal"], [35, "Br", "halogen"], [36, "Kr", "noble-gas"],
+    [37, "Rb", "alkali-metal"], [38, "Sr", "alkaline-earth"], [39, "Y", "transition-metal"], [40, "Zr", "transition-metal"], [41, "Nb", "transition-metal"], [42, "Mo", "transition-metal"], [43, "Tc", "transition-metal"], [44, "Ru", "transition-metal"], [45, "Rh", "transition-metal"], [46, "Pd", "transition-metal"], [47, "Ag", "transition-metal"], [48, "Cd", "transition-metal"], [49, "In", "basic-metal"], [50, "Sn", "basic-metal"], [51, "Sb", "semimetal"], [52, "Te", "semimetal"], [53, "I", "halogen"], [54, "Xe", "noble-gas"],
+    [55, "Cs", "alkali-metal"], [56, "Ba", "alkaline-earth"], [57, "La", "lanthanide"], [72, "Hf", "transition-metal"], [73, "Ta", "transition-metal"], [74, "W", "transition-metal"], [75, "Re", "transition-metal"], [76, "Os", "transition-metal"], [77, "Ir", "transition-metal"], [78, "Pt", "transition-metal"], [79, "Au", "transition-metal"], [80, "Hg", "transition-metal"], [81, "Tl", "basic-metal"], [82, "Pb", "basic-metal"], [83, "Bi", "basic-metal"], [84, "Po", "semimetal"], [85, "At", "halogen"], [86, "Rn", "noble-gas"],
+    [87, "Fr", "alkali-metal"], [88, "Ra", "alkaline-earth"], [89, "Ac", "actinide"], [104, "Rf", "transition-metal"], [105, "Db", "transition-metal"], [106, "Sg", "transition-metal"], [107, "Bh", "transition-metal"], [108, "Hs", "transition-metal"], [109, "Mt", "transition-metal"], [110, "Ds", "transition-metal"], [111, "Rg", "transition-metal"], [112, "Cn", "transition-metal"], [113, "Nh", "basic-metal"], [114, "Fl", "basic-metal"], [115, "Mc", "basic-metal"], [116, "Lv", "basic-metal"], [117, "Ts", "halogen"], [118, "Og", "noble-gas"],
+    [null, null, "spacer", 3],
+    // Lanthanides
+    [58, "Ce", "lanthanide"], [59, "Pr", "lanthanide"], [60, "Nd", "lanthanide"], [61, "Pm", "lanthanide"], [62, "Sm", "lanthanide"], [63, "Eu", "lanthanide"], [64, "Gd", "lanthanide"], [65, "Tb", "lanthanide"], [66, "Dy", "lanthanide"], [67, "Ho", "lanthanide"], [68, "Er", "lanthanide"], [69, "Tm", "lanthanide"], [70, "Yb", "lanthanide"], [71, "Lu", "lanthanide"],
+    [null, null, "spacer", 3],
+    // Actinides
+    [90, "Th", "actinide"], [91, "Pa", "actinide"], [92, "U", "actinide"], [93, "Np", "actinide"], [94, "Pu", "actinide"], [95, "Am", "actinide"], [96, "Cm", "actinide"], [97, "Bk", "actinide"], [98, "Cf", "actinide"], [99, "Es", "actinide"], [100, "Fm", "actinide"], [101, "Md", "actinide"], [102, "No", "actinide"], [103, "Lr", "actinide"]
+];
+
+// Tạo bảng tuần hoàn
+const table = document.getElementById('periodicTable');
+periodicTable.forEach(element => {
+    if (!element[0] && element[2] === "spacer") {
+        const spacer = document.createElement('div');
+        spacer.style.gridColumn = `span ${element[3] || 1}`;
+        table.appendChild(spacer);
+    } else if (element[0]) {
+        const div = document.createElement('div');
+        div.className = `element ${element[2]}`;
+        div.id = element[1];
+        div.innerHTML = `${element[0]} <br> ${element[1]}`;
+        div.addEventListener('click', showElementInfo);
+        table.appendChild(div);
+    }
+});
+
+function showElementInfo(event) {
+    const symbol = event.currentTarget.id;
+    const info = elementData[symbol];
+    const elementInfo = document.getElementById('elementInfo');
+    const elementTitle = document.getElementById('elementTitle');
+    const elementDetails = document.getElementById('elementDetails');
+    
+    if (info) {
+        elementTitle.textContent = info.name;
+        elementDetails.innerHTML = `
+            <strong>Số nguyên tử:</strong> ${event.currentTarget.textContent.split('\n')[0]}<br>
+            <strong>Khối lượng nguyên tử:</strong> ${info.atomicMass}<br>
+            <strong>Trạng thái:</strong> ${info.state}<br>
+            <strong>Phân loại:</strong> ${info.category}<br>
+            <strong>Cấu hình electron:</strong> ${info.electronConfig}<br>
+            <strong>Trạng thái oxi hóa:</strong> ${info.oxidationStates}<br>
+            <strong>Phát hiện bởi:</strong> ${info.discovery}<br>
+            <strong>Mô tả:</strong> ${info.description}<br>
+            <strong>Ứng dụng:</strong> ${info.uses}
+        `;
+        elementInfo.classList.add('active');
+    } else {
+      elementDetails.textContent = "Thông tin chi tiết không khả dụng cho nguyên tố này.";
+        elementDetails.textContent = "Thông tin chi tiết không khả dụng cho nguyên tố này.";
+        elementInfo.classList.add('active');
+    }
+}
+</script>
+</body>
+</html>
